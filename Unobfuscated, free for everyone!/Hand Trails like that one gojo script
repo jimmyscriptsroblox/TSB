@@ -1,0 +1,103 @@
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+local LIGHT_BLUE = Color3.fromRGB(54, 208, 255)
+
+local animLimbMap = {
+	["rbxassetid://10469493270"] = "RightHand",
+	["rbxassetid://10469630950"] = "LeftHand",
+	["rbxassetid://10469639222"] = "LeftFoot",
+	["rbxassetid://10469643643"] = "RightHand",
+
+
+	-- Add more animation mappings here if needed, e.g.:
+	-- ["rbxassetid://123456789"] = "LeftHand",
+	-- ["rbxassetid://987654321"] = "LeftFoot",
+	-- ["rbxassetid://212121699"] = "RightFoot",
+}
+
+local limbHitboxMap = {
+	RightHand = "Hitbox_RightArm",
+	LeftHand = "Hitbox_LeftArm",
+	RightFoot = "Hitbox_RightLeg",
+	LeftFoot = "Hitbox_LeftLeg",
+}
+
+local function fadeTrail(trail, duration)
+	local initSequence = trail.Transparency
+	local startTime = tick()
+	while tick() - startTime < duration do
+		local alpha = (tick() - startTime) / duration
+		local newKeypoints = {}
+		for _, keypoint in ipairs(initSequence.Keypoints) do
+			local newValue = keypoint.Value + (1 - keypoint.Value) * alpha
+			table.insert(newKeypoints, NumberSequenceKeypoint.new(keypoint.Time, newValue))
+		end
+		trail.Transparency = NumberSequence.new(newKeypoints)
+		RunService.Heartbeat:Wait()
+	end
+	trail.Transparency = NumberSequence.new(1)
+end
+
+local function ThingLol(animationTrack)
+	local character = player.Character
+	if not character then return end
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
+	local animId = animationTrack.Animation and animationTrack.Animation.AnimationId
+	local limbName = animLimbMap[animId]
+	if limbName then
+		local hitboxName = limbHitboxMap[limbName]
+		local limbPart = character:FindFirstChild(hitboxName)
+		if limbPart then
+			local att0 = Instance.new("Attachment")
+			local att1 = Instance.new("Attachment")
+			att0.Parent = limbPart
+			att1.Parent = limbPart
+			att0.Position = Vector3.new(0, -limbPart.Size.Y, 0)
+			att1.Position = Vector3.new(0, limbPart.Size.Y, 0)
+			local trail = Instance.new("Trail")
+			trail.Parent = limbPart
+			trail.Attachment0 = att0
+			trail.Attachment1 = att1
+			trail.Color = ColorSequence.new(LIGHT_BLUE)
+			trail.WidthScale = NumberSequence.new(20)
+			trail.Lifetime = 0.4
+			local bluePart = Instance.new("Part")
+			bluePart.Size = Vector3.new(1.12, 1.12, 1.12)
+			bluePart.Color = LIGHT_BLUE
+			bluePart.Transparency = 0
+			bluePart.Material = Enum.Material.SmoothPlastic
+			bluePart.CanCollide = false
+			bluePart.CFrame = limbPart.CFrame
+			bluePart.Parent = limbPart
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = limbPart
+			weld.Part1 = bluePart
+			weld.Parent = bluePart
+			local fadeTime = 0.4
+			local tweenInfo = TweenInfo.new(fadeTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+			local partTween = TweenService:Create(bluePart, tweenInfo, {Transparency = 1})
+			partTween:Play()
+			spawn(function()
+				fadeTrail(trail, fadeTime)
+			end)
+			delay(fadeTime + 0.1, function()
+				if trail then trail:Destroy() end
+				if att0 then att0:Destroy() end
+				if att1 then att1:Destroy() end
+				if weld then weld:Destroy() end
+				if bluePart then bluePart:Destroy() end
+			end)
+		end
+	end
+end
+
+local function onCharacterAdded(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	humanoid.AnimationPlayed:Connect(ThingLol)
+end
+
+if player.Character then
+	onCharacterAdded(player.Character)
+end
