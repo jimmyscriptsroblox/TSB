@@ -36,11 +36,15 @@ end
 
 local function handleAnimation(animationTrack)
 	local character = player.Character
-	if not character then return end
-	
+	if not character then
+		return
+	end
+
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if not humanoid or humanoid.Health <= 0 then return end
-	
+	if not humanoid or humanoid.Health <= 0 then
+		return
+	end
+
 	local animId = animationTrack.Animation and animationTrack.Animation.AnimationId
 	local mapping = animLimbMap[animId]
 	if mapping then
@@ -54,14 +58,14 @@ local function handleAnimation(animationTrack)
 				local attachment1 = Instance.new("Attachment", limbPart)
 				attachment0.Position = Vector3.new(0, -limbPart.Size.Y, 0)
 				attachment1.Position = Vector3.new(0, limbPart.Size.Y, 0)
-				
+
 				local trail = Instance.new("Trail", limbPart)
 				trail.Attachment0 = attachment0
 				trail.Attachment1 = attachment1
 				trail.Color = ColorSequence.new(mapping.color)
 				trail.WidthScale = NumberSequence.new(20)
 				trail.Lifetime = mapping.lifetime
-				
+
 				local coloredPart = Instance.new("Part")
 				coloredPart.Size = Vector3.new(1.12, 1.12, 1.12)
 				coloredPart.Color = mapping.color
@@ -70,26 +74,36 @@ local function handleAnimation(animationTrack)
 				coloredPart.CanCollide = false
 				coloredPart.CFrame = limbPart.CFrame
 				coloredPart.Parent = limbPart
-				
+
 				local weld = Instance.new("WeldConstraint", coloredPart)
 				weld.Part0 = limbPart
 				weld.Part1 = coloredPart
-				
+
 				local fadeTime = mapping.lifetime
 				local tweenInfo = TweenInfo.new(fadeTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-				local partTween = TweenService:Create(coloredPart, tweenInfo, {Transparency = 1})
+				local partTween = TweenService:Create(coloredPart, tweenInfo, { Transparency = 1 })
 				partTween:Play()
-				
+
 				spawn(function()
 					fadeTrail(trail, fadeTime)
 				end)
-				
+
 				delay(fadeTime + 0.1, function()
-					if trail then trail:Destroy() end
-					if attachment0 then attachment0:Destroy() end
-					if attachment1 then attachment1:Destroy() end
-					if weld then weld:Destroy() end
-					if coloredPart then coloredPart:Destroy() end
+					if trail then
+						trail:Destroy()
+					end
+					if attachment0 then
+						attachment0:Destroy()
+					end
+					if attachment1 then
+						attachment1:Destroy()
+					end
+					if weld then
+						weld:Destroy()
+					end
+					if coloredPart then
+						coloredPart:Destroy()
+					end
 				end)
 			end
 		end)
