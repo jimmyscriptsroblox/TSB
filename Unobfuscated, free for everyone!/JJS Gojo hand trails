@@ -1,0 +1,61 @@
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
+local animLimbMap = {
+	["rbxassetid://10469493270"] = { limb = "Right Arm", color = Color3.fromRGB(110, 240, 255), lifetime = 0.4, startDelay = 0 },
+	["rbxassetid://10469630950"] = { limb = "Left Arm",  color = Color3.fromRGB(110, 240, 255), lifetime = 0.4, startDelay = 0 },
+	["rbxassetid://10469639222"] = { limb = "Left Leg",  color = Color3.fromRGB(110, 240, 255), lifetime = 0.5, startDelay = 0.1 },
+	["rbxassetid://10469643643"] = { limb = "Right Arm", color = Color3.fromRGB(110, 240, 255), lifetime = 0.4, startDelay = 0 },
+}
+
+local function handleAnimation(animationTrack)
+	local character = player.Character
+	if not character then return end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
+
+	local animId = animationTrack.Animation and animationTrack.Animation.AnimationId
+	local mapping = animLimbMap[animId]
+	if mapping then
+		local startDelay = mapping.startDelay or 0
+		delay(startDelay, function()
+			local limbName = mapping.limb
+			local limbPart = character:FindFirstChild(limbName)
+			if limbPart then
+				local coloredPart = Instance.new("Part")
+				coloredPart.Size = Vector3.new(1.1, 2.1, 1.1)
+				coloredPart.Color = mapping.color
+				coloredPart.Transparency = 0
+				coloredPart.Material = Enum.Material.SmoothPlastic
+				coloredPart.CanCollide = false
+				coloredPart.CFrame = limbPart.CFrame
+				coloredPart.Parent = limbPart
+
+				local weld = Instance.new("WeldConstraint", coloredPart)
+				weld.Part0 = limbPart
+				weld.Part1 = coloredPart
+
+				local fadeTime = mapping.lifetime
+				local tweenInfo = TweenInfo.new(fadeTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+				local partTween = TweenService:Create(coloredPart, tweenInfo, { Transparency = 1 })
+				partTween:Play()
+
+				delay(fadeTime + 0.1, function()
+					if weld then weld:Destroy() end
+					if coloredPart then coloredPart:Destroy() end
+				end)
+			end
+		end)
+	end
+end
+
+local function onCharacterAdded(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	humanoid.AnimationPlayed:Connect(handleAnimation)
+end
+
+if player.Character then
+	onCharacterAdded(player.Character)
+end
